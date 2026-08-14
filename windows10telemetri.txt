@@ -1,0 +1,15 @@
+To eliminate noise from the SIEM, I edited ossec.conf by removing the collection of standard Windows channels (Application, Security, System) and retaining exclusively the advanced Sysmon telemetry channel.
+
+I removed the default <localfile> blocks that collected standard Windows logs:
+Application (Standard application logs)
+Security (Generic Windows security logs)
+System (System logs)
+
+What I added:
+I added a single <localfile> block dedicated to the Sysmon operational channel:
+
+
+<localfile>
+  <location>Microsoft-Windows-Sysmon/Operational</location>
+  <log_format>eventchannel</log_format>
+</localfile>

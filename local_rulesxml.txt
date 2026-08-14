@@ -1,0 +1,22 @@
+Custom Wazuh Detection Rule: Mimikatz Detection (local_rules.xml)
+
+To detect credential theft attempts in real time, I created a custom rule with maximum severity in /var/ossec/etc/rules/local_rules.xml:
+
+```xml
+<group name="local,syslog,sshd,">
+  <rule id="100002" level="15">
+    <if_group>sysmon_event1</if_group>
+    <field name="win.eventdata.originalFileName" type="pcre2">(?i)mimikatz\.exe</field>
+    <description>Mimikatz Usage Detected</description>
+    <mitre>
+      <id>T1003</id>
+    </mitre>
+  </rule>
+</group>
+
+Alert Trigger & Rule Validation
+
+After restarting the Wazuh manager, I tested the effectiveness of the new rule by running the Mimikatz utility under a renamed name (youareawesome.exe).
+
+    SIEM Result: Rule 100002 triggered instantly in the Dashboard (Security events), generating a Level 15 severity alert.
+    Proof of Detection: Even though the executable name was modified by the attacker, the system correctly identified the threat as Mimikatz Usage Detected, automatically classifying it under the Credential Access tactic (MITRE T1003).

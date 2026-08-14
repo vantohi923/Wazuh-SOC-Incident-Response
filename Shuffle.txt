@@ -1,0 +1,47 @@
+Until now, alerts remained purely visual within the Wazuh Dashboard. Through this integration, every time Wazuh generates an alert (for example, our rule for mimikatz.exe), it automatically sends it via HTTP Webhook directly to Shuffle. From there, Shuffle can initiate automation: sending an email to the Security team.
+
+/var/ossec/etc/ossec.conf
+
+add:
+<integration>
+    <name>shuffle</name>
+    <hook_url>http://138.197.82.45:3001/api/v1/hooks/webhook_d8f3a9e1-bc42-4e89-a212-0941ab2f3c7d</hook_url>
+    <level>3</level>
+    <alert_format>json</alert_format>
+  </integration>
+
+Shuffle Webhook Validation & Ingestion
+
+After configuring the integration in Wazuh, I created a Workflow in Shuffle triggered by a Webhook:
+
+    JSON Payload Verification: I executed a test run (Execution Argument) to confirm the receipt of the custom alert with rule_id: 100002.
+    Data Inspection: The workflow successfully extracted all critical variables transmitted by Wazuh (hashes, commandLine, originalFileName, user), preparing the data for the subsequent automation steps.
+
+ Threat Intelligence Enrichment via VirusTotal API
+
+To automate the reputation analysis of suspicious files, I extended the Shuffle workflow with a Threat Intelligence step:
+
+1. Hash Extraction (SHA256-Regex): I used a regular expression (Regex) to isolate the SHA256 hash from the alert sent by Wazuh.
+2. VirusTotal API Query (get_a_hash_report): I integrated the VirusTotal v3 module to automatically check the extracted hash against the global threat database.
+3. Result: The workflow receives an HTTP 200 response containing the full security verdict (number of detections from antivirus vendors) directly within the JSON payload.
+
+Incident Response & Case Management via TheHive API
+
+A key step in the Shuffle (SOAR) automation flow consists of automatically generating an incident ticket in TheHive:
+
+1. Alert Creation via API: Shuffle sends the aggregated data (Wazuh telemetry + VirusTotal result) to TheHive's API endpoint.
+2. Assigning IOCs (Observables): File hashes, process name, endpoint IP, and user are automatically added as Indicators of Compromise (IOCs) within the ticket.
+3. SOC Optimization: Reduces Mean Time to Respond (MTTR) by eliminating manual data entry by security analysts.
+
+Automated Email Notification
+
+As a final notification step in the Shuffle (SOAR) workflow, I configured the automatic delivery of an email notification to the security team:
+
+    Trigger: Triggers instantly after threat confirmation and ticket creation.
+    Dynamic Content: The email contains critical details extracted from telemetry (UTC timestamp, user, process name) and a link to the analysis, ensuring an immediate alert for intervention.
+
+Interactive Incident Response (User Input Node)
+
+To prevent erroneous automated isolation actions (False Positives), I integrated a Human-in-the-loop approval step within the Shuffle workflow:
+    User Input Module: The workflow pauses execution and sends a confirmation request to the SOC analyst ("Would you like to isolate the host?").
+    Decision Making: Depending on the option selected by the analyst (Yes/No), Shuffle executes the remediation action (Wazuh Active Response) or closes the flow without affecting the target system.

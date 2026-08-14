@@ -1,0 +1,63 @@
+sudo nano /etc/cassandra/cassandra.yaml
+
+cluster_name: 'Test Cluster'
+listen_address: '192.168.100.150'
+rpc_address: '192.168.100.150'
+seed_provider:
+  - class_name: org.apache.cassandra.locator.SimpleSeedProvider
+    parameters:
+      - seeds: "192.168.100.150"
+
+
+sudo nano /etc/elasticsearch/elasticsearch.yml
+
+# Set the cluster name for TheHive
+cluster.name: thehive
+
+# Set node name
+node.name: node-1
+
+# Set the network host to listen on
+network.host: <THEHIVE_SERVER_IP>
+
+# Set HTTP port for Elasticsearch
+http.port: 9200
+
+# Configure seed hosts for cluster discovery
+discovery.seed_hosts: ["127.0.0.1", "[::1]"]
+
+# Start and enable Elasticsearch service
+sudo systemctl start elasticsearch
+sudo systemctl enable elasticsearch
+
+# Check service status
+sudo systemctl status elasticsearch.service
+
+
+sudo nano /etc/thehive/application.conf
+
+# Database & JanusGraph configuration (Cassandra)
+db.janusgraph {
+  storage {
+    backend = cql
+    hostname = ["192.168.100.150"]
+    cql {
+      cluster-name = thp
+      keyspace = thehive
+    }
+  }
+}
+
+# Index Search configuration (Elasticsearch)
+index.search {
+  backend = elasticsearch
+  hostname = ["192.168.100.150"]
+  index-name = thehive
+}
+
+# Start and enable TheHive service
+sudo systemctl start thehive
+sudo systemctl enable thehive
+
+# Verify TheHive status
+sudo systemctl status thehive

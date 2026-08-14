@@ -1,0 +1,27 @@
+Wazuh Agent Enrollment on the Target Machine (Windows 10)
+
+To collect security logs, system events, and Sysmon telemetry, I installed and enrolled the Wazuh Agent on a Windows 10 virtual machine.
+
+What this step does:
+
+1.Connects the workstation to the SIEM: The Wazuh Agent installed on Windows 10 continuously monitors system activity (started processes, network connections, registry modifications).
+2.Sends real-time telemetry: Any suspicious event generated on the Windows 10 computer is sent to the central Wazuh server for analysis and correlation with detection rules.
+
+Executed configuration steps:
+
+1.From the Wazuh Dashboard web interface, I generated the dedicated installation command for Windows agents.
+2.I opened a PowerShell window with Administrator privileges on the Windows 10 computer and ran the download and registration command:
+
+Enabled storage of all raw events (Raw Logs): I set <logall>yes</logall> and <logall_json>yes</logall_json> in ossec.conf on the Wazuh server to archive all received logs in JSON format at /var/ossec/logs/archives/archives.json.
+
+Enabled archive indexing in Filebeat: I modified /etc/filebeat/filebeat.yml by setting archives.enabled: true under the wazuh module, allowing the visualization of all raw events (raw logs) directly in the Wazuh Dashboard.
+
+Created the wazuh-archives-* Index Pattern: I created a dedicated index pattern in the Wazuh Dashboard (Discover section) to allow real-time querying, filtering, and visualization of all collected raw logs.
+
+ Attack Simulation & Telemetry Validation
+
+To validate telemetry collection under real attack conditions, I simulated a credential dumping attempt on the Windows 10 machine using the Mimikatz utility.
+
+Objective: Testing the capability of Sysmon and Wazuh to detect and collect details about malicious executables.
+
+Result: Sysmon intercepted the execution of the mimikatz.exe process, extracting in real time the command line, the file's SHA256 hash, the parent process (powershell.exe), and the mapping to the MITRE ATT&CK technique (T1574.002).
